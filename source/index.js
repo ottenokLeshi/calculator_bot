@@ -67,8 +67,8 @@ calculatorBot.on('callback_query', async message => {
             console.error(error);
         }    
     } else if (message.data === 'AC') {
-        calculatorBot.editMessage(chatId, lastId, Object.assign({text: '0'}, markup));        
-        await Users.update({chatId: message.chat.id }, { currentValue: '', previousValue: '' })
+        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: '0'}, markup));        
+        await Users.update({chatId: user.chatId }, { currentValue: '', previousValue: '' })
     }
 })
 
