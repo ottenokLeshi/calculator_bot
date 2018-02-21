@@ -2,7 +2,7 @@ const axios = require('axios');
 var mongoose = require('mongoose');
 const Bot = require('./models/telegram_bot');
 const Users = require('./models/userModel');
-const markup = require('../config/bot_token').markup;
+const markup = require('../config/markup').markup;
 
 
 mongoose.connect('mongodb://localhost/telegram');
@@ -36,11 +36,9 @@ calculatorBot.on('message', async message => {
 });
 
 calculatorBot.on('callback_query', async message => { 
-    console.log(message.data)
     const user = await Users.findOne({chatId: message.message.chat.id});
     if (Number.isInteger(+message.data)) {
         const currentValue = user.currentValue + message.data;
-        console.log(typeof currentValue)
         calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup));
         await Users.update({ chatId: user.chatId },{ currentValue })
     } else if (message.data === '/' || message.data === '*' || message.data === '-' || message.data === '+'){
@@ -61,7 +59,6 @@ calculatorBot.on('callback_query', async message => {
         }
     } else if (message.data === '=') {
         try {
-            console.log(`${user.previousValue}${user.currentValue}`)
             const previousValue = eval(`${user.previousValue}${user.currentValue}`);
             const currentValue = '';
             calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: previousValue}, markup));            
