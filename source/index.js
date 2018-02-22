@@ -36,36 +36,41 @@ calculatorBot.on('message', async message => {
 });
 
 calculatorBot.on('callback_query', async message => { 
+    let previousValue = '';
+    let currentValue = '';
     const user = await Users.findOne({chatId: message.message.chat.id});
     if (Number.isInteger(+message.data)) {
-        const currentValue = user.currentValue + message.data;
+        currentValue = user.currentValue + message.data;    
         calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup));
-        await Users.update({ chatId: user.chatId },{ currentValue })
+        await Users.update({ chatId: user.chatId },{ currentValue });
     } else if (message.data === '/' || message.data === '*' || message.data === '-' || message.data === '+'){
         if (user.previousValue === 0) {
-            const previousValue = +user.currentValue;
-            const currentValue = message.data;
+            previousValue = +user.currentValue;
+            currentValue = message.data;
             calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup));
-            await Users.update({ chatId: user.chatId },{ currentValue, previousValue })
+            await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
         } else {
             try {
-                const previousValue = eval(`${user.previousValue}${user.currentValue}`);
-                const currentValue = message.data;
-                calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup));                
-                await Users.update({ chatId: user.chatId },{ currentValue, previousValue })
+                previousValue = eval(`${user.previousValue}${user.currentValue}`);
             } catch (error) {
                 console.error(error);
             }
+            currentValue = message.data;
+            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup));                
+            await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
         }
     } else if (message.data === '=') {
         try {
-            const previousValue = eval(`${user.previousValue}${user.currentValue}`);
-            const currentValue = '';
-            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: previousValue}, markup));            
-            await Users.update({ chatId: user.chatId },{ currentValue, previousValue })
+            previousValue = eval(`${user.previousValue}${user.currentValue}`);
         } catch (error) {
             console.error(error);
         }    
+        currentValue = '';
+        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: previousValue}, markup));
+        if (previousValue == 'Infinity') {
+            previousValue = '';
+        }  
+        await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
     } else if (message.data === 'AC') {
         calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: '0'}, markup));        
         await Users.update({chatId: user.chatId }, { currentValue: '', previousValue: '' })
