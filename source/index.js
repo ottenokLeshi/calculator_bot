@@ -42,7 +42,6 @@ calculatorBot.on('callback_query', async message => {
     const user = await Users.findOne({chatId: message.message.chat.id});
     let hasСalculated = user.hasСalculated
     if (Number.isInteger(+message.data)) {
-
         if (user.hasСalculated === true) {
             currentValue = message.data;
             previousValue = '0'; 
@@ -55,7 +54,7 @@ calculatorBot.on('callback_query', async message => {
             Object.assign({text: currentValue}, markup(previousValue).markup)
         );
         await Users.update({ chatId: user.chatId },{ currentValue, previousValue, hasСalculated });
-    } else if (message.data === '/' || message.data === '*' || message.data === '-' || message.data === '+'){
+    } else if (['/','+','-','*'].indexOf(message.data) !== -1) {
         if (user.previousValue === 0) {
             previousValue = +user.currentValue;
             currentValue = message.data;
@@ -64,40 +63,51 @@ calculatorBot.on('callback_query', async message => {
             );
             await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
         } else {
-            try {
-                if (hasСalculated === false){
-                    previousValue = eval(`${user.previousValue}${user.currentValue}`);
-                } else {
+            if (['/','+','-','*'].indexOf(user.currentValue) !== -1) {
+                try {
                     previousValue = eval(`${user.previousValue}`)
-                    hasСalculated = false;
+                    currentValue = message.data;
+                } catch (error) {
+                    console.error(error);
                 }
-            } catch (error) {
-                console.error(error);
+            } else {
+                try {
+                    if (hasСalculated === false){
+                        previousValue = eval(`${user.previousValue}${user.currentValue}`);
+                    } else {
+                        previousValue = eval(`${user.previousValue}`)
+                        hasСalculated = false;
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+                currentValue = message.data;
             }
-            currentValue = message.data;
             calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, 
                 markup(previousValue).markup)
             );                
             await Users.update({ chatId: user.chatId },{ currentValue, previousValue, hasСalculated });
         }
     } else if (message.data === '=') {
+        if (hasСalculated === false) {
+            console.log({prev:user.previousValue, curr:user.currentValue})
+            try {
+                if (!hasСalculated){
+                    previousValue = eval(`${user.previousValue}${user.currentValue}`);
+                } else {
+                    previousValue = eval(`${user.previousValue}`);
+                }
+            } catch (error) {
+                console.error(error);
+            }    
+            currentValue = '0';
+            hasСalculated = true;        
+            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, 
+                markup(previousValue).markup)
+            );
+            await Users.update({ chatId: user.chatId },{ currentValue, previousValue, hasСalculated});
+        }
         
-        console.log({previousValue:user.previousValue, currentValue:user.currentValue})
-        try {
-            if (!hasСalculated){
-                previousValue = eval(`${user.previousValue}${user.currentValue}`);
-            } else {
-                previousValue = eval(`${user.previousValue}`);
-            }
-        } catch (error) {
-            console.error(error);
-        }    
-        currentValue = '0';
-        hasСalculated = true;        
-        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, 
-            markup(previousValue).markup)
-        );
-        await Users.update({ chatId: user.chatId },{ currentValue, previousValue, hasСalculated});
     } else if (message.data === 'AC') {
         hasСalculated = false;
         calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: '0'}, 
