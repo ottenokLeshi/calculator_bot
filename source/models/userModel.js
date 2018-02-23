@@ -13,6 +13,9 @@ const User = mongoose.model('User', {
     },
     previousValue: {
         type: String
+    },
+    hasСalculated: {
+        type: Boolean
     }
 });
 
