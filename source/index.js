@@ -25,7 +25,7 @@ calculatorBot.on('message', async message => {
                 previousValue: ''
             })
         }
-        await Users.update({chatId: message.chat.id }, { currentValue: '', previousValue: '' })
+        await Users.update({chatId: message.chat.id }, { currentValue: '', previousValue: '0' })
         calculatorBot.sendMessage(message.chat.id, '0', markup().markup)
         .then(async message => {
             const chatId = message.data.result.chat.id;
@@ -40,14 +40,24 @@ calculatorBot.on('callback_query', async message => {
     let currentValue = '';
     const user = await Users.findOne({chatId: message.message.chat.id});
     if (Number.isInteger(+message.data)) {
-        currentValue = user.currentValue + message.data;    
-        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup(user.previousValue).markup));
-        await Users.update({ chatId: user.chatId },{ currentValue });
+        if (user.previousValue == 'Infinity' || user.previousValue == '-Infinity'){
+            currentValue = message.data;
+            previousValue = '0';
+        } else {
+            currentValue = user.currentValue + message.data; 
+            previousValue = user.previousValue;             
+        }
+        calculatorBot.editMessage(user.chatId, user.lastMessageId, 
+            Object.assign({text: currentValue}, markup(user.previousValue === '' ? 0 : user.previousValue).markup)
+        );
+        await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
     } else if (message.data === '/' || message.data === '*' || message.data === '-' || message.data === '+'){
         if (user.previousValue === 0) {
             previousValue = +user.currentValue;
             currentValue = message.data;
-            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup(user.previousValue).markup));
+            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, 
+                markup(user.previousValue).markup)
+            );
             await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
         } else {
             try {
@@ -56,23 +66,27 @@ calculatorBot.on('callback_query', async message => {
                 console.error(error);
             }
             currentValue = message.data;
-            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, markup(previousValue).markup));                
+            calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: currentValue}, 
+                markup(previousValue).markup)
+            );                
             await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
         }
     } else if (message.data === '=') {
+        console.log({previousValue:user.previousValue, currentValue:user.currentValue})
         try {
             previousValue = eval(`${user.previousValue}${user.currentValue}`);
         } catch (error) {
             console.error(error);
         }    
         currentValue = '';
-        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: previousValue}, markup(previousValue).markup));
-        if (previousValue == 'Infinity') {
-            previousValue = '';
-        }  
+        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: previousValue}, 
+            markup(previousValue).markup)
+        );
         await Users.update({ chatId: user.chatId },{ currentValue, previousValue });
     } else if (message.data === 'AC') {
-        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: '0'}, markup().markup));        
+        calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign({text: '0'}, 
+            markup().markup)
+        );        
         await Users.update({chatId: user.chatId }, { currentValue: '', previousValue: '' })
     }
 })
