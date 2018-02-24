@@ -53,7 +53,11 @@ calculatorBot.on('callback_query', async (message) => {
       previousValue = '0';
       hasСalculated = false;
     } else {
-      currentValue = user.currentValue + message.data;
+      if (message.data === '0' && user.currentValue === '0') {
+        currentValue = `${user.currentValue}`;
+      } else {
+        currentValue = `${user.currentValue}${message.data}`;
+      }
       previousValue = user.previousValue;
     }
     calculatorBot.editMessage(
@@ -63,49 +67,35 @@ calculatorBot.on('callback_query', async (message) => {
     );
     await Users.update({ chatId: user.chatId }, { currentValue, previousValue, hasСalculated });
   } else if (['/', '+', '-', '*'].indexOf(message.data) !== -1) {
-    if (user.previousValue === 0) {
-      previousValue = +user.currentValue;
-      currentValue = message.data;
-      calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign(
-        { text: getText(currentValue) },
-        markup(user.previousValue).markup,
-      ));
-      await Users.update({ chatId: user.chatId }, { currentValue, previousValue });
-    } else {
-      if (['/', '+', '-', '*'].indexOf(user.currentValue) !== -1) {
-        try {
-          previousValue = eval(`${user.previousValue}`);
-          currentValue = message.data;
-        } catch (error) {
-          console.error(error);
-        }
-      } else {
-        try {
-          if (hasСalculated === false) {
-            previousValue = eval(`${user.previousValue}${user.currentValue}`);
-          } else {
-            previousValue = eval(`${user.previousValue}`);
-            hasСalculated = false;
-          }
-        } catch (error) {
-          console.error(error);
-        }
+    if (['/', '+', '-', '*'].indexOf(user.currentValue) !== -1) {
+      try {
+        previousValue = eval(`${user.previousValue}`);
         currentValue = message.data;
+      } catch (error) {
+        console.error(error);
       }
-      calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign(
-        { text: getText(currentValue) },
-        markup(previousValue).markup,
-      ));
-      await Users.update({ chatId: user.chatId }, { currentValue, previousValue, hasСalculated });
+    } else {
+      try {
+        if (hasСalculated === false) {
+          previousValue = eval(`${user.previousValue === '0' ? '' : user.previousValue}${user.currentValue}`);
+        } else {
+          previousValue = eval(`${user.previousValue}`);
+          hasСalculated = false;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+      currentValue = message.data;
     }
+    calculatorBot.editMessage(user.chatId, user.lastMessageId, Object.assign(
+      { text: getText(currentValue) },
+      markup(previousValue).markup,
+    ));
+    await Users.update({ chatId: user.chatId }, { currentValue, previousValue, hasСalculated });
   } else if (message.data === '=') {
     if (hasСalculated === false) {
       try {
-        if (!hasСalculated) {
-          previousValue = eval(`${user.previousValue}${user.currentValue}`);
-        } else {
-          previousValue = eval(`${user.previousValue}`);
-        }
+        previousValue = eval(`${user.previousValue === '0' ? '' : user.previousValue}${user.currentValue}`);
       } catch (error) {
         console.error(error);
       }
