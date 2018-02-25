@@ -68,12 +68,8 @@ calculatorBot.on('callback_query', async (message) => {
     await Users.update({ chatId: user.chatId }, { currentValue, previousValue, hasСalculated });
   } else if (['/', '+', '-', '*'].indexOf(message.data) !== -1) {
     if (['/', '+', '-', '*'].indexOf(user.currentValue) !== -1) {
-      try {
-        previousValue = eval(`${user.previousValue}`);
-        currentValue = message.data;
-      } catch (error) {
-        console.error(error);
-      }
+      previousValue = user.previousValue;
+      currentValue = message.data;
     } else {
       try {
         if (hasСalculated === false) {

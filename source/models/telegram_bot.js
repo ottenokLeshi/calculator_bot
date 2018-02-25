@@ -9,6 +9,12 @@ class Bot extends EventEmitter {
     this._offset = 0;
   }
 
+  /**
+   * Метод отправки сообщения
+   * @param {Number} chat_id - id чата
+   * @param {String} text - текст отправляемого сообщения
+   * @param {Object} optionalParams - параметры сообщения
+   */
   sendMessage(chat_id, text, optionalParams) {
     const params = {
       chat_id,
@@ -20,6 +26,12 @@ class Bot extends EventEmitter {
     return this._request('sendMessage', params);
   }
 
+  /**
+   * Метод изменения сообщения
+   * @param {Number} chat_id - id чата
+   * @param {Number} message_id - id изменяемого сообщения
+   * @param {String} text - текст отправляемого сообщения
+   */
   editMessage(chat_id, message_id, text) {
     const params = {
       chat_id,
@@ -31,6 +43,11 @@ class Bot extends EventEmitter {
     return this._request('editMessageText', params);
   }
 
+  /**
+   * Метод обращающийся к API
+   * @param {String} method - метод, на который нужно сделать запрос
+   * @param {Object} params - параметры запроса
+   */
   _request(method, params) {
     const options = {
       url: `https://api.telegram.org/bot${token}/${method}`,
@@ -39,6 +56,10 @@ class Bot extends EventEmitter {
     return axios.get(options.url, { params });
   }
 
+  /**
+   * Метод запрашивающий обновления
+   * @param {Number} offset - id первого обновления, которое нужно вернуть
+   */
   _getUpdates(offset) {
     const params = {
       offset,
@@ -48,6 +69,10 @@ class Bot extends EventEmitter {
     return this._request('getUpdates', params);
   }
 
+  /**
+   * Метод вызывающий EventEmmiter при обработке запроса
+   * @param {Array} updates 
+   */
   _handleUpdates(updates) {
     updates.forEach((update) => {
       this._offset = update.update_id;
@@ -65,6 +90,9 @@ class Bot extends EventEmitter {
     });
   }
 
+  /**
+   * Метод посылающий запросы с заданной периодичностью
+   */
   start() {
     this._offset++;
     return this._getUpdates(this._offset)
